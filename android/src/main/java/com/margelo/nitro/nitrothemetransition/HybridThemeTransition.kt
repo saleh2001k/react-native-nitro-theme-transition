@@ -14,7 +14,9 @@ import android.view.ViewAnimationUtils
 import android.view.ViewGroup
 import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
+import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
+import com.facebook.proguard.annotations.DoNotStrip
 import com.facebook.react.views.modal.ReactModalHostView
 import com.margelo.nitro.NitroModules
 import com.margelo.nitro.core.Promise
@@ -76,6 +78,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * capture would bake in a frozen copy of the animations still running above it —
  * which is why the capture walks windows and skips [SnapshotView]s.
  */
+@Keep
+@DoNotStrip
 class HybridThemeTransition : HybridThemeTransitionSpec() {
 
   /** One in-flight transition: the snapshot and whatever is animating it. */
