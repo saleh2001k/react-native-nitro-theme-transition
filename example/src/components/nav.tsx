@@ -11,7 +11,8 @@ import { DrawerActions } from "expo-router/react-navigation";
 import { Pressable } from "react-native";
 
 import { useTheme } from "@/theme/store";
-import type { ThemeName } from "@/theme/themes";
+import { THEMES, nextThemeName, type ThemeName } from "@/theme/themes";
+import { cycleTheme, parkOriginFromEvent } from "@/theme/transition";
 
 /** The drawer's own navigation object, addressed by route rather than by bubbling. */
 type DrawerNavigation = {
@@ -27,6 +28,9 @@ type DrawerNavigation = {
  * own navigation — depends on the action bubbling up through the native tab
  * navigator, which is not something to rely on. The dispatch is kept as a
  * fallback for navigator versions that do not expose the helper.
+ *
+ * The workspace drawer does NOT use this: its header is rendered by the drawer
+ * itself, so it already has the right navigation object and needs no lookup.
  */
 export function DrawerMenuButton() {
   const theme = useTheme();
@@ -47,6 +51,40 @@ export function DrawerMenuButton() {
       }}
     >
       <Ionicons name="menu" size={22} color={theme.tint} />
+    </Pressable>
+  );
+}
+
+/**
+ * A single icon that steps the palette forward.
+ *
+ * Two details make it work as a HEADER button rather than an ordinary one:
+ *
+ *   - `onTouchStart` parks the coordinate before `onPress` runs, so the reveal
+ *     starts from the icon itself. A native header hosts a real React Native
+ *     view, so the touch reports usable `pageX/pageY` like anywhere else;
+ *   - the icon is derived from the theme it is currently showing, so it repaints
+ *     inside the same commit as the rest of the header — it is part of the
+ *     snapshot, not something that flips a frame later.
+ */
+export function ThemeIconButton({ size = 22 }: { size?: number }) {
+  const theme = useTheme();
+  const next = THEMES[nextThemeName(theme.name)];
+
+  return (
+    <Pressable
+      accessibilityLabel={`Switch theme to ${next.label}`}
+      accessibilityRole="button"
+      hitSlop={12}
+      onTouchStart={parkOriginFromEvent}
+      onPress={() => cycleTheme()}
+      style={({ pressed }) => (pressed ? { opacity: 0.6 } : undefined)}
+    >
+      <Ionicons
+        name={theme.isDark ? "moon" : "sunny"}
+        size={size}
+        color={theme.tint}
+      />
     </Pressable>
   );
 }

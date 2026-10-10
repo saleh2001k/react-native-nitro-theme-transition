@@ -78,6 +78,11 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
 
+          {/* A second navigator entirely: a stack whose first screen is its own
+              drawer. Pushed on top of everything above, so a theme change fired
+              from in there still snapshots the same single root view. */}
+          <Stack.Screen name="workspace" options={{ headerShown: false }} />
+
           {/* A native modal presentation: a child view controller / dialog that
               still lives inside the app's own window, so it IS captured. */}
           <Stack.Screen
