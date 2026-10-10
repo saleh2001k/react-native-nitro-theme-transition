@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-theme-transition-example",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~57.0.9",
