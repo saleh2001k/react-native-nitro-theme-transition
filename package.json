@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-theme-transition",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "GPU-driven theme-change transitions for React Native \u2014 sixteen effects including circular reveal, iris, wipe, split, blinds, blur, Liquid Glass, pixelize, dissolve, ripple and shatter, without Skia, Reanimated or any JS animation library.",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
