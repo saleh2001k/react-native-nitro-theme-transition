@@ -1286,6 +1286,28 @@ class HybridThemeTransition : HybridThemeTransitionSpec() {
    * Calls [finish] when the animation runs to completion, but NOT when it is
    * cancelled — a cancellation comes from a teardown that has already removed the
    * view, and finishing again would double-resolve the promise.
+   *
+   * ── Why completion is deferred by one frame ──
+   * [ValueAnimator] delivers its final update and then calls `onAnimationEnd`
+   * inside the SAME Choreographer animation callback. That last update sets the
+   * clip to its end value and calls `invalidate()`, which only schedules a draw
+   * for the traversal later in that same frame — so finishing here tears the
+   * snapshot down before the frame it just asked for is ever drawn.
+   *
+   * For the kinds that end on nothing that is invisible: `fade` ends at alpha 0,
+   * and the forward `circularReveal` ends at radius 0, so whenever the view goes
+   * away it was already drawing nothing. The INVERSE reveal is the opposite —
+   * it is still painting a ring of the old screen right up to the final frame,
+   * so dropping it one frame early makes that ring vanish in a single step.
+   * Whether that is visible depends on how close the last DRAWN frame got, which
+   * is why it flickers only sometimes: on a frame the UI thread missed, the last
+   * one drawn can be several percent short.
+   *
+   * One frame of Choreographer is enough — the callback registered here runs in
+   * the animation phase of the next frame, by which time the current frame's
+   * traversal has drawn the end state. It costs one extra frame of a snapshot
+   * that is, by definition, fully revealed and therefore pixel-identical to the
+   * app underneath it.
    */
   private fun onEnd(animator: Animator, finish: () -> Unit) {
     animator.addListener(
@@ -1297,7 +1319,7 @@ class HybridThemeTransition : HybridThemeTransitionSpec() {
         }
 
         override fun onAnimationEnd(animation: Animator) {
-          if (!cancelled) finish()
+          if (!cancelled) waitFrames(1) { finish() }
         }
       }
     )

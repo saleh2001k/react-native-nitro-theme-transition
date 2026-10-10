@@ -30,6 +30,7 @@ const LINKS: DrawerLink[] = [
   { href: "/gallery", label: "Gallery", icon: "grid-outline" },
   { href: "/settings", label: "Settings", icon: "options-outline" },
   { href: "/playbook", label: "Playbook", icon: "book-outline" },
+  { href: "/workspace", label: "Workspace", icon: "briefcase-outline" },
   { href: "/about", label: "About", icon: "information-circle-outline" },
 ];
 
