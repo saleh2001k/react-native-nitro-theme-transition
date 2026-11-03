@@ -1,5 +1,5 @@
 /** Vertices in the outline handed to native. Fixed, so the mask path can be interpolated. */
-const SAMPLES = 64;
+const SAMPLES = 128;
 
 /**
  * Turns SVG path data into the unit polygon native draws the reveal with: a flat
