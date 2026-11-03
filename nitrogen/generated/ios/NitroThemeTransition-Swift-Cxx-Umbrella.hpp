@@ -32,6 +32,7 @@ namespace margelo::nitro::nitrothemetransition { enum class ThemeTransitionShape
 #include <NitroModules/Result.hpp>
 #include <exception>
 #include <memory>
+#include <vector>
 
 // C++ helpers for Swift
 #include "NitroThemeTransition-Swift-Cxx-Bridge.hpp"

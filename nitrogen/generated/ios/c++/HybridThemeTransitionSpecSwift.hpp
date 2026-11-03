@@ -29,6 +29,7 @@ namespace margelo::nitro::nitrothemetransition { enum class ThemeTransitionBlurS
 #include "ThemeTransitionDirection.hpp"
 #include "ThemeTransitionShape.hpp"
 #include "ThemeTransitionBlurStyle.hpp"
+#include <vector>
 
 #include "NitroThemeTransition-Swift-Cxx-Umbrella.hpp"
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **`svgPath` option.** Pass SVG path data and `circularReveal`,
+  `circularRevealInverse` and `iris` shrink / grow that outline instead of a
+  circle. `ThemeTransitionOptions` gained `customShape`, so the generated bridge
+  changed — rebuild native.
+
 ## 1.0.0
 
 The API is stable. `withThemeTransition` has had the same call signature since

@@ -18,8 +18,14 @@ public extension ThemeTransitionOptions {
   /**
    * Create a new instance of `ThemeTransitionOptions`.
    */
-  init(kind: ThemeTransitionKind, durationMs: Double, originX: Double, originY: Double, settleFrames: Double, direction: ThemeTransitionDirection, angleDeg: Double, shape: ThemeTransitionShape, blurStyle: ThemeTransitionBlurStyle, bands: Double) {
-    self.init(kind, durationMs, originX, originY, settleFrames, direction, angleDeg, shape, blurStyle, bands)
+  init(kind: ThemeTransitionKind, durationMs: Double, originX: Double, originY: Double, settleFrames: Double, direction: ThemeTransitionDirection, angleDeg: Double, shape: ThemeTransitionShape, blurStyle: ThemeTransitionBlurStyle, bands: Double, customShape: [Double]) {
+    self.init(kind, durationMs, originX, originY, settleFrames, direction, angleDeg, shape, blurStyle, bands, { () -> bridge.std__vector_double_ in
+      var __vector = bridge.create_std__vector_double_(customShape.count)
+      for __item in customShape {
+        __vector.push_back(__item)
+      }
+      return __vector
+    }())
   }
 
   @inline(__always)
@@ -70,5 +76,10 @@ public extension ThemeTransitionOptions {
   @inline(__always)
   var bands: Double {
     return self.__bands
+  }
+  
+  @inline(__always)
+  var customShape: [Double] {
+    return self.__customShape.map({ __item in __item })
   }
 }

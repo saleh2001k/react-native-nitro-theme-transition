@@ -31,6 +31,7 @@ namespace margelo::nitro::nitrothemetransition { enum class ThemeTransitionBlurS
 #include "JThemeTransitionShape.hpp"
 #include "ThemeTransitionBlurStyle.hpp"
 #include "JThemeTransitionBlurStyle.hpp"
+#include <vector>
 
 namespace margelo::nitro::nitrothemetransition {
 
