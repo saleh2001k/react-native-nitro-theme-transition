@@ -19,6 +19,7 @@ import type {
   ThemeTransitionShape,
 } from 'react-native-nitro-theme-transition';
 
+import type { CustomShapeKey } from '../kinds';
 import { THEMES, type Theme, type ThemeName } from './themes';
 
 /** Where the reveal circle is centred. */
@@ -31,6 +32,8 @@ export type Settings = {
   angleDeg: number;
   /** Outline `iris` collapses into. */
   shape: ThemeTransitionShape;
+  /** SVG outline for the shape reveals; `none` keeps the circle / `shape`. */
+  customShape: CustomShapeKey | 'none';
   /** How `blur` applies itself. */
   blurStyle: ThemeTransitionBlurStyle;
   /** How many louvres `blinds` cuts the screen into. */
@@ -64,6 +67,7 @@ const DEFAULT_SETTINGS: Settings = {
   direction: 'bottom',
   angleDeg: 0,
   shape: 'hexagon',
+  customShape: 'none',
   blurStyle: 'uniform',
   bands: 6,
   // Longer than a production app would use (300–450ms) so each effect is
