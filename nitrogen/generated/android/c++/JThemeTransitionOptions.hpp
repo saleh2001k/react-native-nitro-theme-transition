@@ -18,6 +18,7 @@
 #include "ThemeTransitionDirection.hpp"
 #include "ThemeTransitionKind.hpp"
 #include "ThemeTransitionShape.hpp"
+#include <vector>
 
 namespace margelo::nitro::nitrothemetransition {
 
@@ -58,6 +59,8 @@ namespace margelo::nitro::nitrothemetransition {
       jni::local_ref<JThemeTransitionBlurStyle> blurStyle = this->getFieldValue(fieldBlurStyle);
       static const auto fieldBands = clazz->getField<double>("bands");
       double bands = this->getFieldValue(fieldBands);
+      static const auto fieldCustomShape = clazz->getField<jni::JArrayDouble>("customShape");
+      jni::local_ref<jni::JArrayDouble> customShape = this->getFieldValue(fieldCustomShape);
       return ThemeTransitionOptions(
         kind->toCpp(),
         durationMs,
@@ -68,7 +71,13 @@ namespace margelo::nitro::nitrothemetransition {
         angleDeg,
         shape->toCpp(),
         blurStyle->toCpp(),
-        bands
+        bands,
+        [&]() {
+          size_t __size = customShape->size();
+          std::vector<double> __vector(__size);
+          customShape->getRegion(0, __size, __vector.data());
+          return __vector;
+        }()
       );
     }
 
@@ -78,7 +87,7 @@ namespace margelo::nitro::nitrothemetransition {
      */
     [[maybe_unused]]
     static jni::local_ref<JThemeTransitionOptions::javaobject> fromCpp(const ThemeTransitionOptions& value) {
-      using JSignature = JThemeTransitionOptions(jni::alias_ref<JThemeTransitionKind>, double, double, double, double, jni::alias_ref<JThemeTransitionDirection>, double, jni::alias_ref<JThemeTransitionShape>, jni::alias_ref<JThemeTransitionBlurStyle>, double);
+      using JSignature = JThemeTransitionOptions(jni::alias_ref<JThemeTransitionKind>, double, double, double, double, jni::alias_ref<JThemeTransitionDirection>, double, jni::alias_ref<JThemeTransitionShape>, jni::alias_ref<JThemeTransitionBlurStyle>, double, jni::alias_ref<jni::JArrayDouble>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -92,7 +101,13 @@ namespace margelo::nitro::nitrothemetransition {
         value.angleDeg,
         JThemeTransitionShape::fromCpp(value.shape),
         JThemeTransitionBlurStyle::fromCpp(value.blurStyle),
-        value.bands
+        value.bands,
+        [&]() {
+          size_t __size = value.customShape.size();
+          jni::local_ref<jni::JArrayDouble> __array = jni::JArrayDouble::newArray(__size);
+          __array->setRegion(0, __size, value.customShape.data());
+          return __array;
+        }()
       );
     }
   };

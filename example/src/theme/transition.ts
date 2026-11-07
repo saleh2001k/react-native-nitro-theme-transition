@@ -19,6 +19,7 @@ import {
   type ThemeTransitionConfig,
 } from 'react-native-nitro-theme-transition';
 
+import { CUSTOM_SHAPES } from '../kinds';
 import { themeStore } from './store';
 import { nextThemeName, oppositeThemeName, type ThemeName } from './themes';
 
@@ -112,6 +113,8 @@ export function isReduceMotionEnabled(): boolean {
 /* -------------------------------------------------------------------------- */
 
 export type ChangeOptions = Partial<ThemeTransitionConfig> & {
+  /** Overrides the custom SVG outline from settings; `none` forces the plain shape. */
+  customShape?: keyof typeof CUSTOM_SHAPES | 'none';
   /** Force the animation off for this one change (rehydration, tests, "instant" buttons). */
   instant?: boolean;
   /** Use this point instead of whatever is parked. */
@@ -173,11 +176,14 @@ export function runThemed(apply: () => void, options: ChangeOptions = {}) {
     return;
   }
 
+  const custom = options.customShape ?? settings.customShape;
+
   withThemeTransition(apply, {
     kind: options.kind ?? settings.kind,
     direction: options.direction ?? settings.direction,
     angleDeg: options.angleDeg ?? settings.angleDeg,
     shape: options.shape ?? settings.shape,
+    svgPath: custom === 'none' ? undefined : CUSTOM_SHAPES[custom].path,
     blurStyle: options.blurStyle ?? settings.blurStyle,
     bands: options.bands ?? settings.bands,
     durationMs: options.durationMs ?? settings.durationMs,

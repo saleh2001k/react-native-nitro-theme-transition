@@ -37,7 +37,7 @@ import {
   Tile,
   TileGrid,
 } from "@/components/ui";
-import { BLUR_STYLE_META, DIRECTION_META, KIND_META, SHAPE_META } from "@/kinds";
+import { BLUR_STYLE_META, CUSTOM_SHAPES, DIRECTION_META, KIND_META, SHAPE_META, type CustomShapeKey } from "@/kinds";
 import {
   themeStore,
   useChangeCount,
@@ -171,6 +171,41 @@ export default function Playground() {
                 }
               />
             ))}
+          </Row>
+        </>
+      )}
+
+      {(settings.kind === "circularReveal" ||
+        settings.kind === "circularRevealInverse" ||
+        settings.kind === "iris") && (
+        <>
+          <SectionTitle>Custom SVG shape</SectionTitle>
+          <Hint>
+            Pass any SVG path as svgPath and the reveal uses it instead of the
+            circle. It is recentred on its centroid and resampled natively.
+          </Hint>
+          <Row gap={8} wrap style={{ marginTop: 12 }}>
+            {(["none", ...Object.keys(CUSTOM_SHAPES)] as (CustomShapeKey | "none")[]).map(
+              (customShape) => (
+                <Chip
+                  key={customShape}
+                  active={customShape === settings.customShape}
+                  icon={customShape === "none" ? "close-outline" : CUSTOM_SHAPES[customShape].icon}
+                  label={customShape === "none" ? "None" : CUSTOM_SHAPES[customShape].label}
+                  onPress={() =>
+                    runThemed(
+                      () => {
+                        themeStore.setTheme(
+                          nextThemeName(themeStore.getState().themeName),
+                        );
+                        themeStore.setSettings({ customShape });
+                      },
+                      { customShape },
+                    )
+                  }
+                />
+              ),
+            )}
           </Row>
         </>
       )}

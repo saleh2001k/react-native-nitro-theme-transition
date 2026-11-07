@@ -132,3 +132,19 @@ export const DIRECTION_META: Record<ThemeTransitionDirection, { label: string; i
     left: { label: 'Left', icon: 'arrow-back-outline' },
     right: { label: 'Right', icon: 'arrow-forward-outline' },
   };
+
+/**
+ * Custom outlines for the shape reveals, as SVG path data. Any viewBox works —
+ * the library recentres and rescales — these are 24x24 icon paths.
+ */
+export const CUSTOM_SHAPES = {
+  star: { label: 'Star', icon: 'star-outline', path: 'M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z' },
+  heart: {
+    label: 'Heart',
+    icon: 'heart-outline',
+    path: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z',
+  },
+  bolt: { label: 'Bolt', icon: 'flash-outline', path: 'M13 2L4 14h6l-1 8 9-12h-6z' },
+} as const satisfies Record<string, { label: string; icon: IoniconName; path: string }>;
+
+export type CustomShapeKey = keyof typeof CUSTOM_SHAPES;

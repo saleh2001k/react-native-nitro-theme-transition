@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { NitroModules } from 'react-native-nitro-modules';
+import { svgPathToPolygon } from './svgPath';
 import type {
   ThemeTransition,
   ThemeTransitionBlurStyle,
@@ -110,6 +111,24 @@ export type ThemeTransitionConfig = {
    * finer louvres.
    */
   bands?: number;
+  /**
+   * A custom outline as SVG path data (the `d` attribute), e.g. a star, a heart
+   * or a logo. `circularReveal`, `circularRevealInverse` and `iris` use it in
+   * place of the circle / `shape`: it shrinks (or, for the inverse, grows) from
+   * `origin` exactly as the circle would.
+   *
+   * ```ts
+   * withThemeTransition(applyTheme, {
+   *   kind: 'circularRevealInverse',
+   *   svgPath: 'M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z',
+   * });
+   * ```
+   *
+   * Any viewBox and any size: the outline is recentred on its centroid and
+   * scaled natively. Only the first subpath is used, and the shape should
+   * contain its own centre. Invalid data falls back to the default outline.
+   */
+  svgPath?: string;
   /**
    * Display frames to hold the snapshot before revealing, so the theme swap has
    * painted underneath. Two is enough in practice: Unistyles commits on the JS
@@ -290,6 +309,11 @@ export function withThemeTransition(applyTheme: () => void, config: ThemeTransit
   const durationMs = config.durationMs ?? DEFAULTS.durationMs;
   const settleFrames = config.settleFrames ?? DEFAULTS.settleFrames;
 
+  const customShape = (config.svgPath && svgPathToPolygon(config.svgPath)) || [];
+  if (config.svgPath && !customShape.length && __DEV__) {
+    console.warn('[theme-transition] `svgPath` is not a valid closed path; ignoring it.');
+  }
+
   const doCommit = () => {
     // A newer call's `begin()` already evicted this snapshot natively; what is
     // pending now is that call's, and it commits it itself.
@@ -308,6 +332,7 @@ export function withThemeTransition(applyTheme: () => void, config: ThemeTransit
         shape: config.shape ?? DEFAULTS.shape,
         blurStyle: config.blurStyle ?? DEFAULTS.blurStyle,
         bands: config.bands ?? DEFAULTS.bands,
+        customShape,
       })
       .catch(() => {
         try {

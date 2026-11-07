@@ -378,10 +378,12 @@ private enum IrisShape {
       let b = polygon[(index + 1) % polygon.count]
       let dx = b.x - a.x
       let dy = b.y - a.y
-      let length = hypot(dx, dy)
-      guard length > 0 else { continue }
-      // Distance from the origin to the line through a and b.
-      smallest = min(smallest, abs(dy * a.x - dx * a.y) / length)
+      let lengthSquared = dx * dx + dy * dy
+      guard lengthSquared > 0 else { continue }
+      // Distance from the origin to the SEGMENT a-b, not the infinite line: a
+      // custom outline can be concave, where the line would under-measure.
+      let t = min(max(-(a.x * dx + a.y * dy) / lengthSquared, 0), 1)
+      smallest = min(smallest, hypot(a.x + t * dx, a.y + t * dy))
     }
 
     return smallest.isFinite && smallest > 0 ? smallest : 1
@@ -1539,6 +1541,10 @@ final class HybridThemeTransition: HybridThemeTransitionSpec {
     }
 
     switch options.kind {
+    case .circularreveal where !options.customShape.isEmpty:
+      animateIris(transition, options: options, inverse: false, duration: duration, finish: finish)
+    case .circularrevealinverse where !options.customShape.isEmpty:
+      animateIris(transition, options: options, inverse: true, duration: duration, finish: finish)
     case .circularreveal:
       animateCircularReveal(
         transition, options: options, inverse: false, duration: duration, finish: finish)
@@ -1550,7 +1556,7 @@ final class HybridThemeTransition: HybridThemeTransitionSpec {
         view.alpha = 0
       }
     case .iris:
-      animateIris(transition, options: options, duration: duration, finish: finish)
+      animateIris(transition, options: options, inverse: false, duration: duration, finish: finish)
     case .slide:
       animateSweep(transition, options: options, mode: .wipe, duration: duration, finish: finish)
     case .split:
@@ -1740,7 +1746,9 @@ final class HybridThemeTransition: HybridThemeTransitionSpec {
   }
 
   /**
-   * `circularReveal` with a shape other than a circle.
+   * `circularReveal` with a shape other than a circle — a built-in `shape`, or
+   * `options.customShape` (from the caller's SVG path) when present, which also
+   * serves `circularRevealInverse`.
    *
    * Identical in every other respect — same origin handling, same mask, same
    * single submitted animation. Only the path builder differs, and `IrisShape`
@@ -1749,22 +1757,38 @@ final class HybridThemeTransition: HybridThemeTransitionSpec {
   private func animateIris(
     _ transition: Transition,
     options: ThemeTransitionOptions,
+    inverse: Bool,
     duration: Double,
     finish: @escaping () -> Void
   ) {
     let bounds = transition.view.bounds
     let origin = Self.revealOrigin(transition, options: options, in: bounds)
-    let polygon = IrisShape.polygon(for: options.shape)
+    let polygon =
+      options.customShape.count >= 6
+      ? stride(from: 0, to: options.customShape.count - 1, by: 2).map {
+        CGPoint(x: options.customShape[$0], y: options.customShape[$0 + 1])
+      }
+      : IrisShape.polygon(for: options.shape)
 
     // Scale so the polygon's EDGES clear the furthest corner, not its vertices.
     let radius = Self.cornerRadius(from: origin, in: bounds) / IrisShape.inradius(of: polygon)
 
-    animateMask(
-      transition,
+    let path: (CGFloat) -> CGPath = { radius in
       // Never exactly zero: a degenerate polygon has no drawable area, which
       // would change the path's structure and break the interpolation.
-      from: IrisShape.path(polygon, radius: max(radius, 0.01), origin: origin).cgPath,
-      to: IrisShape.path(polygon, radius: 0.01, origin: origin).cgPath,
+      let shape = IrisShape.path(polygon, radius: max(radius, 0.01), origin: origin)
+      guard inverse else { return shape.cgPath }
+      // Even-odd, as in `animateCircularReveal`: the polygon punches a hole.
+      let path = UIBezierPath(rect: bounds)
+      path.append(shape)
+      return path.cgPath
+    }
+
+    animateMask(
+      transition,
+      from: path(inverse ? 0 : radius),
+      to: path(inverse ? radius : 0),
+      fillRule: inverse ? .evenOdd : .nonZero,
       duration: duration,
       finish: finish
     )

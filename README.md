@@ -114,6 +114,7 @@ is not in the loop and cannot stutter it.
 | `shape`        | `'hexagon'`        | `iris` — `'circle' \| 'diamond' \| 'hexagon' \| 'roundedRect'` |
 | `blurStyle`    | `'uniform'`        | `blur` — `'uniform' \| 'sweep'`                             |
 | `bands`        | `6`                | `blinds` — louvre count, clamped to 2…24                   |
+| `svgPath`      | —                  | custom outline as SVG path data — `circularReveal`, `circularRevealInverse` and `iris` shrink / grow it instead of a circle |
 | `settleFrames` | `2`                | frames to hold before revealing, so the change has painted |
 | `ready`        | —                  | promise to wait for before counting `settleFrames` — see below |
 

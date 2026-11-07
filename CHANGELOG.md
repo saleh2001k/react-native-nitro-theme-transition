@@ -2,14 +2,23 @@
 
 ## 1.2.0
 
+The generated bridge changed (`ThemeTransitionOptions.customShape`), so
+**rebuild native** after upgrading — a JS-only update is not enough.
+
 ### Added
 
+- **`svgPath` option.** Pass SVG path data and `circularReveal`,
+  `circularRevealInverse` and `iris` shrink / grow that outline instead of a
+  circle — a star, a heart, a logo. Any viewBox; the outline is recentred on its
+  centroid, resampled to 128 vertices and scaled natively. Only the first
+  subpath is used, and the shape must contain its own centroid. Invalid data
+  falls back to the default outline with a `__DEV__` warning. Thanks
+  [@FabienBounoir](https://github.com/FabienBounoir) (#5).
 - **`ready` option.** Pass a promise and the snapshot holds until it settles
   (resolve or reject), then counts `settleFrames` and reveals. For apps that
   know when their new theme has actually rendered — views coloured through
   React props repaint a render after native styles, and a fixed hold uncovers
   them in the old colours. Not timed out by the library; cap it yourself.
-  JS-only, no native rebuild.
 
 ### Fixed
 

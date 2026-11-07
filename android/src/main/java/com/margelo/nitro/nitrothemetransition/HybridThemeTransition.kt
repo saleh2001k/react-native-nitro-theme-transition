@@ -489,10 +489,12 @@ class HybridThemeTransition : HybridThemeTransitionSpec() {
     when (options.kind) {
       ThemeTransitionKind.FADE -> animateFade(transition, duration, finish)
       ThemeTransitionKind.CIRCULARREVEAL ->
-        animateCircularReveal(transition, options, inverse = false, duration = duration, finish = finish)
+        if (options.customShape.isNotEmpty()) animateIris(transition, options, false, duration, finish)
+        else animateCircularReveal(transition, options, inverse = false, duration = duration, finish = finish)
       ThemeTransitionKind.CIRCULARREVEALINVERSE ->
-        animateCircularReveal(transition, options, inverse = true, duration = duration, finish = finish)
-      ThemeTransitionKind.IRIS -> animateIris(transition, options, duration, finish)
+        if (options.customShape.isNotEmpty()) animateIris(transition, options, true, duration, finish)
+        else animateCircularReveal(transition, options, inverse = true, duration = duration, finish = finish)
+      ThemeTransitionKind.IRIS -> animateIris(transition, options, false, duration, finish)
       ThemeTransitionKind.SLIDE ->
         animateSweep(transition, options, SnapshotView.SweepMode.WIPE, duration, finish)
       ThemeTransitionKind.SPLIT ->
@@ -636,7 +638,9 @@ class HybridThemeTransition : HybridThemeTransitionSpec() {
   }
 
   /**
-   * `circularReveal` with a shape other than a circle.
+   * `circularReveal` with a shape other than a circle — a built-in `shape`, or
+   * `options.customShape` (from the caller's SVG path) when present, which also
+   * serves `circularRevealInverse`.
    *
    * Identical in every other respect — same origin handling, same clip, same
    * one draw op per frame. Only the outline differs, and [IrisShape] explains
@@ -645,13 +649,17 @@ class HybridThemeTransition : HybridThemeTransitionSpec() {
   private fun animateIris(
     transition: Transition,
     options: ThemeTransitionOptions,
+    inverse: Boolean,
     duration: Long,
     finish: () -> Unit,
   ) {
     val view = transition.view
     val origin = revealOrigin(transition, options)
+    val polygon =
+      if (options.customShape.size >= 6) FloatArray(options.customShape.size) { options.customShape[it].toFloat() }
+      else IrisShape.polygon(options.shape)
 
-    view.prepareIris(options.shape, origin[0], origin[1])
+    view.prepareIris(polygon, origin[0], origin[1], inverse)
     view.clip = SnapshotView.Clip.IRIS
 
     start(transition, duration, finish) { snapshot, t -> snapshot.progress = t }

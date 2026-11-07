@@ -81,10 +81,12 @@ internal object IrisShape {
       val next = (index + 1) % points
       val dx = polygon[next * 2] - ax
       val dy = polygon[next * 2 + 1] - ay
-      val length = hypot(dx, dy)
-      if (length <= 0f) continue
-      // Distance from the origin to the line through a and b.
-      smallest = minOf(smallest, abs(dy * ax - dx * ay) / length)
+      val lengthSquared = dx * dx + dy * dy
+      if (lengthSquared <= 0f) continue
+      // Distance from the origin to the SEGMENT a-b, not the infinite line: a
+      // custom outline can be concave, where the line would under-measure.
+      val t = (-(ax * dx + ay * dy) / lengthSquared).coerceIn(0f, 1f)
+      smallest = minOf(smallest, hypot(ax + t * dx, ay + t * dy))
     }
 
     return if (smallest.isFinite() && smallest > 0f) smallest else 1f

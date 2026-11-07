@@ -187,6 +187,9 @@ internal class SnapshotView(context: Context) : View(context) {
   /** Radius at which the outline still covers the whole frame. */
   private var irisRadius = 0f
 
+  /** Whether the outline is a growing hole (`circularRevealInverse`) rather than a shrinking mask. */
+  private var irisInverse = false
+
   /**
    * The current `dissolve` mask — a small ALPHA_8 grid stretched over the
    * snapshot, punching out the cells that have already disintegrated.
@@ -728,11 +731,14 @@ internal class SnapshotView(context: Context) : View(context) {
    * The polygon is scaled so its EDGES clear the furthest corner — a polygon's
    * edges sit closer to the centre than its vertices do, so scaling to the
    * corner distance alone would leave the corners poking out at the start.
+   *
+   * [inverse] grows the outline as a hole instead of shrinking it as a mask.
    */
-  fun prepareIris(shape: ThemeTransitionShape, x: Float, y: Float) {
+  fun prepareIris(polygon: FloatArray, x: Float, y: Float, inverse: Boolean = false) {
     holeX = x
     holeY = y
-    irisPolygon = IrisShape.polygon(shape)
+    irisPolygon = polygon
+    irisInverse = inverse
 
     val w = contentWidth.toFloat()
     val h = contentHeight.toFloat()
@@ -740,12 +746,13 @@ internal class SnapshotView(context: Context) : View(context) {
     irisRadius = corner / IrisShape.inradius(irisPolygon)
   }
 
-  /** Clips to the shrinking outline, so the old screen collapses into it. */
+  /** Clips to the shrinking outline, or punches the growing one out. */
+  @Suppress("DEPRECATION")
   private fun clipToIris(canvas: Canvas) {
     if (irisPolygon.size < 6) return
 
     // Never exactly zero: a degenerate outline has no drawable area.
-    val radius = maxOf(0.01f, irisRadius * (1f - progress))
+    val radius = maxOf(0.01f, irisRadius * (if (irisInverse) progress else 1f - progress))
 
     clipPath.rewind()
     var index = 0
@@ -757,7 +764,11 @@ internal class SnapshotView(context: Context) : View(context) {
     }
     clipPath.close()
 
-    canvas.clipPath(clipPath)
+    when {
+      !irisInverse -> canvas.clipPath(clipPath)
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> canvas.clipOutPath(clipPath)
+      else -> canvas.clipPath(clipPath, Region.Op.DIFFERENCE)
+    }
   }
 
   /**

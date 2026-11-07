@@ -152,6 +152,15 @@ export interface ThemeTransitionOptions {
    * reads as finer louvres. Clamped to a sane range natively.
    */
   bands: number;
+  /**
+   * A custom outline as a flat `[x0, y0, x1, y1, …]` polygon, centred on (0, 0)
+   * with its furthest vertex at distance 1. Empty means "none".
+   *
+   * When set, `circularReveal`, `circularRevealInverse` and `iris` use it in
+   * place of the circle / `shape`. Built from an SVG path by the JS layer — see
+   * `svgPath` on `ThemeTransitionConfig`.
+   */
+  customShape: number[];
 }
 
 /**
