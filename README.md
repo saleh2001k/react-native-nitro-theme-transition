@@ -115,6 +115,7 @@ is not in the loop and cannot stutter it.
 | `blurStyle`    | `'uniform'`        | `blur` — `'uniform' \| 'sweep'`                             |
 | `bands`        | `6`                | `blinds` — louvre count, clamped to 2…24                   |
 | `settleFrames` | `2`                | frames to hold before revealing, so the change has painted |
+| `ready`        | —                  | promise to wait for before counting `settleFrames` — see below |
 
 `THEME_TRANSITION_KINDS` and `THEME_TRANSITION_DIRECTIONS` are exported as arrays
 for building pickers. `isThemeTransitionAvailable()` reports whether the native
@@ -154,6 +155,23 @@ animating down to the **old** colours. Raise it:
 ```ts
 withThemeTransition(applyTheme, { settleFrames: 4 });
 ```
+
+On iOS a frame here is `1/120s` of wall-clock time, not a display-link
+callback, so the hold is the same on a 60Hz iPhone as on a ProMotion one and
+does not grow while the main thread is busy mounting the change.
+
+If your app can tell when the new theme has actually rendered, pass that
+instead of guessing a frame count. The snapshot holds until `ready` settles
+(resolve or reject), then counts `settleFrames` as usual:
+
+```ts
+const committed = waitForThemeCommit(next, { maxMs: 500 }); // your code — cap it
+withThemeTransition(() => setTheme(next), { ready: committed, settleFrames: 3 });
+```
+
+The library does not time it out, so cap the promise yourself. A newer
+`withThemeTransition` call made while one is still waiting replaces its
+snapshot; the older reveal is dropped.
 
 `pixlated` also waits two animation frames before `commit` and then polls the
 second (new-theme) snapshot until it differs from the first — settleFrames alone

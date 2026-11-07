@@ -261,6 +261,11 @@ Two subtleties worth not breaking:
 - **`FrameWaiter` is its own `NSObject`** because `CADisplayLink` needs an ObjC
   selector target and nitrogen's generated Swift base class is a plain Swift
   class.
+- **`FrameWaiter` waits by time, not callbacks.** A frame is `1/120s` of
+  wall-clock time; it fires on the first display frame whose `targetTimestamp`
+  reaches the deadline. Counting callbacks doubled the hold on 60Hz iPhones and
+  stretched it further whenever the main thread was busy mounting the change,
+  because a display link drops the callbacks of frames it could not service.
 
 ### 4b. `pixlated` — dual snapshot, Skia look without Skia
 

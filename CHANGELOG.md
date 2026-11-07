@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- **`ready` option.** Pass a promise and the snapshot holds until it settles
+  (resolve or reject), then counts `settleFrames` and reveals. For apps that
+  know when their new theme has actually rendered — views coloured through
+  React props repaint a render after native styles, and a fixed hold uncovers
+  them in the old colours. Not timed out by the library; cap it yourself.
+  JS-only, no native rebuild.
+
+### Fixed
+
+- **A deferred commit could hijack a newer transition.** Native holds one
+  pending snapshot and evicts it on the next `begin()`. A commit that ran after
+  a newer call had begun — `pixlated`'s two-frame wait, or now `ready` — picked
+  up the newer call's snapshot and animated it with the older call's options,
+  ahead of the newer call's own hold. Such a commit is now dropped.
+
+- **iOS: `settleFrames` held far longer than asked.** `FrameWaiter` counted
+  `CADisplayLink` callbacks, so the hold depended on two things the caller
+  cannot see: a 60Hz iPhone delivers half as many callbacks per second as a
+  ProMotion one, and a display link skips the callback of every frame the main
+  thread was too busy to service — exactly what happens while a theme or
+  language change mounts underneath the snapshot. A hold of ~320ms ran for
+  650ms and more on an iPhone 16. It now waits `frames × 1/120s` of wall-clock
+  time and fires on the first display frame whose `targetTimestamp` reaches that
+  deadline. `pixlated`'s probe interval uses the same waiter. Android is
+  unchanged.
+
 ## 1.0.0
 
 The API is stable. `withThemeTransition` has had the same call signature since

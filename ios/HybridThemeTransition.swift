@@ -742,19 +742,31 @@ private enum GrainMask {
 }
 
 /**
- * Counts display frames, then fires once.
+ * Waits `frames` 120Hz frames of wall-clock time, then fires once on the first
+ * display frame at or past that point.
  *
  * Its own `NSObject` because `CADisplayLink` needs an ObjC selector target, and
  * Nitro's generated `HybridThemeTransitionSpec_base` is a plain Swift class —
  * `@objc` members are not available on it.
+ *
+ * ── Why time, not callbacks ──
+ * Counting callbacks made the hold depend on two things the caller cannot see.
+ * A 60Hz iPhone delivers half as many callbacks per second as a ProMotion one,
+ * so the same count held twice as long. And a display link skips the callbacks
+ * of every frame the main thread was too busy to service — exactly what happens
+ * while a theme or language change mounts its commit underneath — so each
+ * blocked frame stretched the hold further. A request for ~320ms ran for
+ * 650ms and more on an iPhone 16.
  */
 private final class FrameWaiter: NSObject {
+  private static let frameUnit: CFTimeInterval = 1.0 / 120.0
+
   private var link: CADisplayLink?
-  private var remaining: Int
+  private let deadline: CFTimeInterval
   private var work: (() -> Void)?
 
   init(frames: Int, work: @escaping () -> Void) {
-    self.remaining = frames
+    self.deadline = CACurrentMediaTime() + Double(frames) * Self.frameUnit
     self.work = work
     super.init()
 
@@ -763,9 +775,10 @@ private final class FrameWaiter: NSObject {
     self.link = link
   }
 
-  @objc private func onFrame() {
-    remaining -= 1
-    guard remaining <= 0 else { return }
+  @objc private func onFrame(_ link: CADisplayLink) {
+    // `targetTimestamp` is when the frame being prepared reaches the screen, so
+    // whatever `work` starts lands on the first frame at or past the deadline.
+    guard link.targetTimestamp >= deadline else { return }
 
     let work = self.work
     cancel()

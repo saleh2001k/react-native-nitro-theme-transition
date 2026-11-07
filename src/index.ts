@@ -114,9 +114,33 @@ export type ThemeTransitionConfig = {
    * Display frames to hold the snapshot before revealing, so the theme swap has
    * painted underneath. Two is enough in practice: Unistyles commits on the JS
    * thread and mounts on the next main-thread pass.
+   *
+   * On iOS a frame is 1/120s of wall-clock time, so the hold does not depend on
+   * the panel's refresh rate or on how busy the main thread is.
    */
   settleFrames?: number;
+  /**
+   * Hold the snapshot until this settles, THEN count `settleFrames` and reveal.
+   * For an app that knows when its new theme has actually painted — views
+   * coloured through React props repaint a render after the native styles, and
+   * a fixed hold uncovers them in the old colours. Resolve or reject, both
+   * release the hold; cap it on your side.
+   *
+   * A newer `withThemeTransition` call made while this one is still waiting
+   * replaces its snapshot: this call's reveal is then dropped, not run late.
+   */
+  ready?: PromiseLike<unknown>;
 };
+
+/**
+ * Bumped by every `begin()`.
+ *
+ * Native holds ONE pending snapshot and evicts it on the next `begin()`. A
+ * commit deferred past a newer call — by `ready`, or `pixlated`'s frame wait —
+ * would otherwise adopt that call's snapshot and animate it with the stale
+ * options, ahead of the newer call's own hold.
+ */
+let generation = 0;
 
 const DEFAULTS = {
   kind: 'circularReveal' as ThemeTransitionKind,
@@ -234,6 +258,7 @@ export function withThemeTransition(applyTheme: () => void, config: ThemeTransit
     return;
   }
 
+  const token = ++generation;
   let captured = false;
 
   try {
@@ -266,6 +291,10 @@ export function withThemeTransition(applyTheme: () => void, config: ThemeTransit
   const settleFrames = config.settleFrames ?? DEFAULTS.settleFrames;
 
   const doCommit = () => {
+    // A newer call's `begin()` already evicted this snapshot natively; what is
+    // pending now is that call's, and it commits it itself.
+    if (token !== generation) return;
+
     void native
       .commit({
         kind,
@@ -292,11 +321,20 @@ export function withThemeTransition(applyTheme: () => void, config: ThemeTransit
   // Pixelize needs a second snapshot of the *already painted* new theme.
   // Yield two animation frames so React (useSyncExternalStore / context)
   // can commit before native settle + capture starts — otherwise old≈new.
-  if (kind === 'pixlated') {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(doCommit);
-    });
+  const start =
+    kind === 'pixlated'
+      ? () => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(doCommit);
+          });
+        }
+      : doCommit;
+
+  // The caller knows when its new theme has painted: hold the snapshot until
+  // then. Either outcome releases it — the reveal must never be stranded.
+  if (config.ready) {
+    Promise.resolve(config.ready).then(start, start);
   } else {
-    doCommit();
+    start();
   }
 }
