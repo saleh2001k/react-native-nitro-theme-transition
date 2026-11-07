@@ -125,8 +125,9 @@ export type ThemeTransitionConfig = {
    * ```
    *
    * Any viewBox and any size: the outline is recentred on its centroid and
-   * scaled natively. Only the first subpath is used, and the shape should
-   * contain its own centre. Invalid data falls back to the default outline.
+   * scaled natively. Only the first subpath is used, and the shape must
+   * contain its own centroid. Anything else — or data that does not parse —
+   * falls back to the default outline. Ignored by every other kind.
    */
   svgPath?: string;
   /**
@@ -160,6 +161,13 @@ export type ThemeTransitionConfig = {
  * options, ahead of the newer call's own hold.
  */
 let generation = 0;
+
+/** The kinds that draw `svgPath` in place of their circle / `shape`. */
+const SHAPE_KINDS: ReadonlySet<ThemeTransitionKind> = new Set<ThemeTransitionKind>([
+  'circularReveal',
+  'circularRevealInverse',
+  'iris',
+]);
 
 const DEFAULTS = {
   kind: 'circularReveal' as ThemeTransitionKind,
@@ -309,9 +317,13 @@ export function withThemeTransition(applyTheme: () => void, config: ThemeTransit
   const durationMs = config.durationMs ?? DEFAULTS.durationMs;
   const settleFrames = config.settleFrames ?? DEFAULTS.settleFrames;
 
-  const customShape = (config.svgPath && svgPathToPolygon(config.svgPath)) || [];
-  if (config.svgPath && !customShape.length && __DEV__) {
-    console.warn('[theme-transition] `svgPath` is not a valid closed path; ignoring it.');
+  // Only the outline kinds read it; every other kind would parse it for nothing.
+  const svgPath = SHAPE_KINDS.has(kind) ? config.svgPath : undefined;
+  const customShape = (svgPath && svgPathToPolygon(svgPath)) || [];
+  if (svgPath && !customShape.length && __DEV__) {
+    console.warn(
+      '[theme-transition] `svgPath` is not a closed path containing its own centroid; using the default outline.'
+    );
   }
 
   const doCommit = () => {

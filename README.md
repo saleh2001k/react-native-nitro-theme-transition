@@ -293,6 +293,31 @@ whatever the angle, because it measures its own travel along the tilted normal.
 `split` uses both edges at once, so `direction` picks the axis for it:
 `'top'`/`'bottom'` part the screen horizontally, `'left'`/`'right'` vertically.
 
+### `svgPath` — your own outline
+
+<img src="https://raw.githubusercontent.com/saleh2001k/react-native-nitro-theme-transition/main/assets/demos/custom-shape-star.gif" width="185" alt="circularRevealInverse with a star svgPath" align="right">
+
+`circularReveal`, `circularRevealInverse` and `iris` take any SVG path data —
+the `d` attribute — and shrink or grow that outline from `origin` instead of the
+circle / `shape`:
+
+```ts
+withThemeTransition(applyTheme, {
+  kind: 'circularRevealInverse',
+  origin: { x: pageX, y: pageY },
+  svgPath: 'M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z', // a star
+});
+```
+
+Any viewBox and any size: the outline is recentred on its centroid, resampled to
+128 vertices and scaled natively until it clears the screen. Every command is
+supported (`M L H V C S Q T A Z`, absolute and relative); only the first subpath
+is used. The shape must contain its own centroid — a "C" or a crescent cannot
+cover the screen from it — and anything that does not, or does not parse, falls
+back to the default outline with a `__DEV__` warning. Other kinds ignore it.
+
+<br clear="right">
+
 ### The mask ladder — `dissolve`, `stripes`, `ripple`, `shatter`
 
 The reference for this effect is a Skia fragment shader that discards a pixel

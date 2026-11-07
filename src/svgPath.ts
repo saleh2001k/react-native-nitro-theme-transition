@@ -10,8 +10,8 @@ const SAMPLES = 128;
  * and resampled to a fixed vertex count. See `IrisShape` in the native code.
  *
  * Supports every path command (M L H V C S Q T A Z, absolute and relative).
- * Only the first subpath is used. Returns `null` when the data is malformed or
- * encloses no area.
+ * Only the first subpath is used. Returns `null` when the data is malformed,
+ * encloses no area, or does not contain its own centroid.
  */
 export function svgPathToPolygon(d: string): number[] | null {
   const ring = flatten(d);
@@ -224,9 +224,29 @@ function normalize(points: number[]): number[] | null {
   cx /= 3 * area;
   cy /= 3 * area;
 
+  // Native scales the outline until its nearest edge clears the screen, measured
+  // from the centroid. A centroid OUTSIDE the outline (a "C", a crescent) never
+  // covers the screen that way: the reveal would start with a hole in it and end
+  // with old-theme pieces popping off. Reject it so the caller gets the default.
+  if (!contains(points, cx, cy)) return null;
+
   let radius = 0;
   for (let k = 0; k < count; k++) radius = Math.max(radius, Math.hypot(points[k * 2]! - cx, points[k * 2 + 1]! - cy));
   if (!(radius > 0)) return null;
 
   return points.map((value, index) => (value - (index % 2 ? cy : cx)) / radius);
+}
+
+/** Even-odd ray cast: whether (px, py) lies inside the closed ring. */
+function contains(points: number[], px: number, py: number): boolean {
+  const count = points.length / 2;
+  let inside = false;
+  for (let k = 0, j = count - 1; k < count; j = k++) {
+    const xk = points[k * 2]!;
+    const yk = points[k * 2 + 1]!;
+    const xj = points[j * 2]!;
+    const yj = points[j * 2 + 1]!;
+    if (yk > py !== yj > py && px < ((xj - xk) * (py - yk)) / (yj - yk) + xk) inside = !inside;
+  }
+  return inside;
 }

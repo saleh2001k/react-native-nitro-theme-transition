@@ -1763,10 +1763,13 @@ final class HybridThemeTransition: HybridThemeTransitionSpec {
   ) {
     let bounds = transition.view.bounds
     let origin = Self.revealOrigin(transition, options: options, in: bounds)
+    // Read once: the generated getter copies the whole C++ vector into a new
+    // Swift array on EVERY access.
+    let custom = options.customShape
     let polygon =
-      options.customShape.count >= 6
-      ? stride(from: 0, to: options.customShape.count - 1, by: 2).map {
-        CGPoint(x: options.customShape[$0], y: options.customShape[$0 + 1])
+      custom.count >= 6
+      ? stride(from: 0, to: custom.count - 1, by: 2).map {
+        CGPoint(x: custom[$0], y: custom[$0 + 1])
       }
       : IrisShape.polygon(for: options.shape)
 
