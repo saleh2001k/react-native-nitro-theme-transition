@@ -427,7 +427,18 @@ stays a single submitted animation.
 One subtlety: a polygon's **edges** sit closer to the centre than its vertices,
 so scaling it to the furthest corner's distance would leave the corners poking
 out at the start. `IrisShape.inradius` measures the largest disc that fits inside
-the unit outline, and the radius is divided by it.
+the unit outline, and the radius is divided by it. It measures to each **segment**,
+not the infinite line through it — identical for the convex built-ins, but a
+concave custom outline (a star) would be under-measured by the line.
+
+**`svgPath` rides the same pipeline.** `src/svgPath.ts` flattens the path, resamples
+it to 128 vertices and normalises it (centroid at the origin, furthest vertex at 1);
+the result crosses the bridge as `ThemeTransitionOptions.customShape`. Non-empty, it
+replaces the polygon for `iris` and turns `circularReveal` / `circularRevealInverse`
+into `animateIris` — the inverse as an even-odd rect + polygon on iOS and
+`clipOutPath` on Android. The JS side rejects outlines whose centroid falls outside
+them: the inradius is measured from the centroid, so such a shape can never cover
+the screen.
 
 ### 4d. The mask ladder — `dissolve`, `stripes`, `ripple`, `shatter`
 
